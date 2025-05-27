@@ -1,0 +1,32 @@
+:root {
+  --gunmetal: #293132ff;
+  --onyx: #38393bff;
+  --jet: #474044ff;
+  --davys-gray: #4f5165ff;
+  --paynes-gray: #526685ff;
+  --glaucous: #547aa5ff;
+  --moonstone: #52a9beff;
+  --robin-egg-blue: #50d8d7ff;
+
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: var(--gunmetal);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  height: 100vh;
+}
+body {
+  margin: 0;
+  min-height: 100vh;
+  position: relative;
+}
