@@ -11,7 +11,7 @@ import {
   MessageInput,
 } from '@chatscope/chat-ui-kit-react';
 import { jwtDecode } from 'jwt-decode';
-import { useParams } from 'react-router-dom';
+import { useOutletContext, useParams } from 'react-router-dom';
 import createMessageList from './createMessageList';
 
 const ChatCont = styled.div`
@@ -20,42 +20,19 @@ const ChatCont = styled.div`
 `;
 
 function Chat() {
-  const [messages, setMessages] = useState(null);
-  const [contact, setContact] = useState(null);
   const [error, setError] = useState(null);
-  const [reset, setReset] = useState(0);
   const { contactId } = useParams();
-  useEffect(() => {
-    async function fetchMessages() {
-      const token = localStorage.getItem('token');
-      const user = jwtDecode(token);
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/users/${
-          user.id
-        }/contacts/${contactId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      if (!res.ok) {
-        const err = await res.json();
-        return setError(err.error);
-      }
-      const contact = await res.json();
-      setContact(contact);
-      const sorted = sortMessages(contact);
-      setMessages(sorted);
-    }
-    fetchMessages();
-  }, [contactId, reset]);
+  const { setAppReset, chats } = useOutletContext();
+  if (!chats) {
+    setAppReset((prev) => prev + 1);
+    return <div>Loading...</div>;
+  }
+  console.log(chats);
+  const contact = chats.find((chat) => chat.id === contactId);
 
   async function handleSend(text) {
     const token = localStorage.getItem('token');
     const user = jwtDecode(token);
-    console.log(user);
-    console.log(contactId);
     try {
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/users/${user.id}/messages`,
@@ -72,15 +49,14 @@ function Chat() {
         const err = await res.json();
         return setError(err.error);
       }
-      setReset(reset + 1); // Reset to trigger re-fetch
+      setAppReset((prev) => prev + 1);
     } catch (error) {
       return setError(
         error.error || 'An error occurred while sending the message'
       );
     }
   }
-  console.log(messages);
-  const messageList = messages && createMessageList(messages);
+  const messageList = contact && createMessageList(contact.messages);
   return (
     <div>
       {contact && (
@@ -92,7 +68,7 @@ function Chat() {
       <ChatCont>
         <MainContainer>
           <ChatContainer>
-            <MessageList>{messages && messageList}</MessageList>
+            <MessageList>{contact && messageList}</MessageList>
             <MessageInput
               placeholder="Type message here"
               attachButton={false}

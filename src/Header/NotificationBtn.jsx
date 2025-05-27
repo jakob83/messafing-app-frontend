@@ -99,7 +99,6 @@ function NotifictionBtn() {
           throw new Error(err.error || 'Failed to fetch requests');
         }
         const data = await res.json();
-        console.log(data);
         setRequests(data);
       } catch (error) {
         console.error('Error fetching requests:', error);

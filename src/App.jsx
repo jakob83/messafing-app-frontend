@@ -4,6 +4,7 @@ import { jwtDecode } from 'jwt-decode';
 import Header from './Header/Header';
 import { Link, Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar/Sidebar';
+import sortMessages from './Chat/sortMessages';
 
 const AppCont = styled.div`
   margin-left: 70px;
@@ -25,6 +26,7 @@ const ChatsDiv = styled.div`
 `;
 
 const Chat = styled(Link)`
+  border-bottom: 1px solid white;
   box-sizing: border-box;
   text-decoration: none;
   width: 100%;
@@ -51,7 +53,7 @@ const NameP = styled.p`
 function App() {
   const [chats, setChats] = useState(null);
   const [error, setError] = useState(null);
-
+  const [appReset, setAppReset] = useState(0);
   useEffect(() => {
     async function fetchChats() {
       const token = localStorage.getItem('token');
@@ -72,13 +74,27 @@ function App() {
           return setError(errorData.error);
         }
         const contacts = await res.json();
-        return setChats(contacts.contacts);
+        let processed = contacts.map((contact) => {
+          return { ...contact, messages: sortMessages(contact) };
+        });
+        const sorted = processed.sort((a, b) => {
+          if (a.messages.length === 0) {
+            return 1;
+          } else if (b.messages.length === 0) {
+            return -1;
+          }
+          return (
+            new Date(b.messages[b.messages.length - 1].sendAt) -
+            new Date(a.messages[a.messages.length - 1].sendAt)
+          );
+        });
+        return setChats(sorted);
       } catch (error) {
         return setError(error.error || 'An Error ocurred');
       }
     }
     fetchChats();
-  }, []);
+  }, [appReset]);
   return (
     <>
       <Header />
@@ -98,7 +114,7 @@ function App() {
         ) : (
           'loading...'
         )}
-        <Outlet />
+        <Outlet context={{ setAppReset, chats }} />
       </AppCont>
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
