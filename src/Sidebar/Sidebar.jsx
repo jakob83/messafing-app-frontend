@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 
 const SidebarContainer = styled.div`
+  z-index: 99;
   position: absolute;
   top: 0;
   width: 70px;

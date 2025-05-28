@@ -1,7 +1,6 @@
 import styled from 'styled-components';
 import ChatHeader from './ChatHeader';
 import { useEffect, useState } from 'react';
-import sortMessages from './sortMessages';
 import '@chatscope/chat-ui-kit-styles/dist/default/styles.min.css';
 import {
   MainContainer,
@@ -23,13 +22,36 @@ function Chat() {
   const [error, setError] = useState(null);
   const { contactId } = useParams();
   const { setAppReset, chats } = useOutletContext();
-  if (!chats) {
-    setAppReset((prev) => prev + 1);
-    return <div>Loading...</div>;
-  }
-  console.log(chats);
-  const contact = chats.find((chat) => chat.id === contactId);
 
+  useEffect(() => {
+    // make Messages read
+    async function fetchMsg() {
+      const token = localStorage.getItem('token');
+      const user = jwtDecode(token);
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_API_URL}/users/${user.id}/messages`,
+          {
+            method: 'PUT',
+            body: JSON.stringify({ senderId: contactId, isRead: true }),
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        if (!res.ok) {
+          const err = await res.json();
+          return setError(err.error);
+        }
+        setAppReset((prev) => prev + 1);
+        const data = await res.json();
+      } catch (error) {
+        setError(error.error || 'An error occurred');
+      }
+    }
+    fetchMsg();
+  }, [contactId, setAppReset]);
   async function handleSend(text) {
     const token = localStorage.getItem('token');
     const user = jwtDecode(token);
@@ -56,9 +78,18 @@ function Chat() {
       );
     }
   }
+  if (!chats) {
+    setAppReset((prev) => prev + 1);
+    return <div>Loading...</div>;
+  }
+  const contact = chats.find((chat) => chat.id === contactId);
+
   const messageList = contact && createMessageList(contact.messages);
   return (
     <div>
+      {error && (
+        <div style={{ color: 'red', marginBottom: '10px' }}>{error}</div>
+      )}
       {contact && (
         <ChatHeader
           userName={contact.name}

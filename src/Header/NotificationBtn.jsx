@@ -229,4 +229,5 @@ function NotifictionBtn() {
   );
 }
 
+export { MsgCount };
 export default NotifictionBtn;

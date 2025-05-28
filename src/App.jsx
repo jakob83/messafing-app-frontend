@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { jwtDecode } from 'jwt-decode';
 import Header from './Header/Header';
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Outlet, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar/Sidebar';
 import sortMessages from './Chat/sortMessages';
 
@@ -26,6 +26,7 @@ const ChatsDiv = styled.div`
 `;
 
 const Chat = styled(Link)`
+  position: relative;
   border-bottom: 1px solid white;
   box-sizing: border-box;
   text-decoration: none;
@@ -50,13 +51,34 @@ const ProfilePic = styled.img`
 const NameP = styled.p`
   font-size: 1.1rem;
 `;
+
+const MsgCount = styled.span`
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 25px;
+  height: 25px;
+  bottom: 10px;
+  right: 10px;
+  background-color: red;
+  color: white;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+`;
 function App() {
   const [chats, setChats] = useState(null);
   const [error, setError] = useState(null);
   const [appReset, setAppReset] = useState(0);
+  const navigate = useNavigate();
   useEffect(() => {
     async function fetchChats() {
       const token = localStorage.getItem('token');
+      if (!token) {
+        return navigate('/login');
+      }
       const { id } = jwtDecode(token);
       try {
         const res = await fetch(
@@ -68,7 +90,11 @@ function App() {
             },
           }
         );
-
+        if (res.status === 401) {
+          setError('Unauthorized. Please log in again.');
+          navigate('/login');
+          return;
+        }
         if (!res.ok) {
           const errorData = await res.json();
           return setError(errorData.error);
@@ -90,11 +116,12 @@ function App() {
         });
         return setChats(sorted);
       } catch (error) {
+        console.log(error);
         return setError(error.error || 'An Error ocurred');
       }
     }
     fetchChats();
-  }, [appReset]);
+  }, [appReset, navigate]);
   return (
     <>
       <Header />
@@ -102,14 +129,20 @@ function App() {
       <AppCont>
         {chats ? (
           <ChatsDiv>
-            {chats.map((chat) => (
-              <Chat to={chat.id} key={chat.id}>
-                <ProfilePic
-                  src={`${import.meta.env.VITE_API_URL}/static/${chat.ppic}`}
-                />
-                <NameP>{chat.name}</NameP>
-              </Chat>
-            ))}
+            {chats.map((chat) => {
+              const unread = chat.messagesSent.filter(
+                (message) => message.isRead === false
+              ).length;
+              return (
+                <Chat to={chat.id} key={chat.id}>
+                  <ProfilePic
+                    src={`${import.meta.env.VITE_API_URL}/static/${chat.ppic}`}
+                  />
+                  <NameP>{chat.name}</NameP>
+                  {unread > 0 && <MsgCount>{unread}</MsgCount>}
+                </Chat>
+              );
+            })}
           </ChatsDiv>
         ) : (
           'loading...'
